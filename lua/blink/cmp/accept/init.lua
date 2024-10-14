@@ -1,6 +1,13 @@
 local text_edits_lib = require('blink.cmp.accept.text-edits')
 local brackets_lib = require('blink.cmp.accept.brackets')
 
+--- Checks if a column is available in a line
+--- @param col integer
+local function is_in_line_range(col)
+  local current_line_len = vim.fn.col('$') - 1
+  return col < current_line_len, current_line_len
+end
+
 --- Applies a completion item to the current buffer
 --- @param item blink.cmp.CompletionItem
 local function accept(item)
@@ -23,6 +30,13 @@ local function accept(item)
     -- so we empty the newText and apply
     local temp_text_edit = vim.deepcopy(item.textEdit)
     temp_text_edit.newText = ''
+
+    local in_range, current_line_len = is_in_line_range(temp_text_edit.range["end"].character)
+
+    if not in_range then
+      temp_text_edit.range["end"].character = current_line_len - 2
+    end
+
     text_edits_lib.apply_text_edits(item.client_id, { temp_text_edit })
 
     -- Expand the snippet
